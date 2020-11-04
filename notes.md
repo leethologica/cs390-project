@@ -5,9 +5,10 @@
 ## Index
 
 1. [Introduction](#introduction)
-2. [Common Problems](#common-problems)
-3. [Potential Project Ideas](#project-ideas)
-4. [Resources](#resources)
+2. [How it Works](#how-it-works)
+3. [Common Problems](#common-problems)
+4. [Potential Project Ideas](#project-ideas)
+5. [Resources](#resources)
 
 ---
 
@@ -48,7 +49,59 @@ Genetic algorithms are a type of learning algorithm that is founded on the idea 
 
 ---
 
-## Common Problems
+## How it Works <a name="how-it-works"></a>
+
+### Hyperparameters
+
+1. Population size
+2. Fitness function
+3. Selection process
+4. Crossover process
+
+### Initial Population
+
+At the start of the algorithm, we randomly initialize the first population. Every population represents a set of possible solutions to our problem — for neural networks, that typically means a set of weights.
+
+* The size of the population at each generation is a hyperparameter
+* Each member of the population is sometimes referred to as a chromosome, and represents a single possible solution to the problem
+
+### Evaluation
+
+Given a population, we want to evaluate the fitness of each individual member. The fitness function itself is another hyperparameter.
+
+* The fitness function provides a metric that measures the quality of an individual
+  * Examples could include distance, some sort of score, accuracy, etc.
+
+### Selection
+
+After the individuals have been scored, we select a subset of them to form the basis for the creation of the next generation of individuals.
+
+* The selection process can be considered a hyperparameter
+* We could use something like weighted selection, which randomly selects individuals from the parent population while giving higher chance of selection to individuals with higher fitness
+
+### Crossover
+
+Once we have selected the "most fit" individuals from the parent population, we produce "offspring" by taking attributes from pairs of parents and merging them together
+
+* The crossover process is another hyperparameter
+
+  <img src="./assets/crossover-example.png" alt="alt" style="zoom:50%;" />
+
+### Mutation
+
+In order to maintain diversity within the population, we add some variation into the next generation with what is basically statistical noise. We randomly select certain individuals with a typically small probability, then randomly select features to change, again with typically small probability.
+
+* Mutation rate is also a hyperparameter
+
+  <img src="./assets/mutation-example.png" alt="alt" style="zoom:50%;" />
+
+### Evolution
+
+Continue this process of forming a population, evaluating its fitness, selecting parents, then spawning new generations.
+
+---
+
+## Common Problems <a name="common-problems"></a>
 
 ### Poor Convergence (Stuck at Local Extrema)
 
@@ -78,6 +131,9 @@ Genetic algorithms are a type of learning algorithm that is founded on the idea 
 * Introduction to Genetic Algorithms and General Intuition
   * https://towardsdatascience.com/using-genetic-algorithms-to-train-neural-networks-b5ffe0d51321
   * https://www.youtube.com/watch?v=XP8R0yzAbdo
+  * https://theailearner.com/2018/11/08/genetic-algorithm-and-its-usage-in-neural-network/
+* Genetic Neural Network to play Snake
+  * https://theailearner.com/2018/11/09/snake-game-with-genetic-algorithm/
 * Fully programmed PacMan in python
   * https://github.com/greyblue9/pacman-python
 
