@@ -53,10 +53,11 @@ Genetic algorithms are a type of learning algorithm that is founded on the idea 
 
 ### Hyperparameters
 
-1. Population size
+1. Population size, number of generations
 2. Fitness function
 3. Selection process
 4. Crossover process
+5. Mutation process/rate
 
 ### Initial Population
 
@@ -86,6 +87,12 @@ Once we have selected the "most fit" individuals from the parent population, we 
 * The crossover process is another hyperparameter
 
   <img src="./assets/crossover-example.png" alt="alt" style="zoom:50%;" />
+  
+* **Types of Crossover Methods**
+
+  * Single Point Crossover: a partition point/index is chosen in an individual's attributes. Everything before that partition is copied directly to the child, while everything after is taken from the other parent. Do this again, but swapping which side is copied. Thus each SPC crossover produces two children that mirror each other
+  * Two Point Crossover: two partition points/indexes are chosen, and the same process is applied as above.
+  * Uniform Crossover: attributes from each parent are randomly selected to make it into the child. Can be implemented to produce two children with each crossover, where the two children are mirrors of each other.
 
 ### Mutation
 
@@ -132,8 +139,11 @@ Continue this process of forming a population, evaluating its fitness, selecting
   * https://towardsdatascience.com/using-genetic-algorithms-to-train-neural-networks-b5ffe0d51321
   * https://www.youtube.com/watch?v=XP8R0yzAbdo
   * https://theailearner.com/2018/11/08/genetic-algorithm-and-its-usage-in-neural-network/
+* Crossover Methods
+  * https://www.geeksforgeeks.org/crossover-in-genetic-algorithm/
 * Genetic Neural Network to play Snake
   * https://theailearner.com/2018/11/09/snake-game-with-genetic-algorithm/
 * Fully programmed PacMan in python
   * https://github.com/greyblue9/pacman-python
-
+* Fully programmed Pong in python
+  * https://github.com/macko358/PygamePong
