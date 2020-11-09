@@ -86,7 +86,7 @@ Once we have selected the "most fit" individuals from the parent population, we 
 
 * The crossover process is another hyperparameter
 
-  <img src="./assets/crossover-example.png" alt="alt" style="zoom:50%;" />
+  <img src="./assets/notes/crossover-example.png" alt="alt" style="zoom:50%;" />
   
 * **Types of Crossover Methods**
 
@@ -100,7 +100,7 @@ In order to maintain diversity within the population, we add some variation into
 
 * Mutation rate is also a hyperparameter
 
-  <img src="./assets/mutation-example.png" alt="alt" style="zoom:50%;" />
+  <img src="./assets/notes/mutation-example.png" alt="alt" style="zoom:50%;" />
 
 ### Evolution
 
