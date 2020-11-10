@@ -79,6 +79,8 @@ After the individuals have been scored, we select a subset of them to form the b
 
 * The selection process can be considered a hyperparameter
 * We could use something like weighted selection, which randomly selects individuals from the parent population while giving higher chance of selection to individuals with higher fitness
+* More simply, we could just take the top $x$ highest performing individuals
+  * We can also introduce the concept of **elitism**, where we take one or more of the highest performing individuals and persist them into the next generation
 
 ### Crossover
 
@@ -101,6 +103,14 @@ In order to maintain diversity within the population, we add some variation into
 * Mutation rate is also a hyperparameter
 
   <img src="./assets/notes/mutation-example.png" alt="alt" style="zoom:50%;" />
+  
+* Complexity of mutation functions can be highly variable
+
+* Some simple examples:
+
+  * Randomly select weight and scale it by some randomly chosen factor from a pre-specified interval, say [-2, 2]
+  * Randomly select weight and add a random value from a pre-specified interval, say [-2, 2]
+  * Randomly select two weights from each parent and swap them
 
 ### Evolution
 
@@ -119,7 +129,7 @@ Continue this process of forming a population, evaluating its fitness, selecting
 
 ### Lack of Convergence
 
-* Network does not converge at all or takes an unpractical time to reach convergence
+* Network does not converge at all or takes an impractical time to reach convergence
   * May be too much mutation happening
 
 ---
