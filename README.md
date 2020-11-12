@@ -53,4 +53,6 @@ An example of the learning curve of this process:
 
 <img src="./assets/notes/learning-curve-example.png" alt="alt" style="zoom:75%;" />
 
+This learning curve is the result of training with a population size of 100, a mating pool size of 15, uniform crossover, and random additive mutation over 200 generations. 
+
 ## Reinforcement Learning Pong Player

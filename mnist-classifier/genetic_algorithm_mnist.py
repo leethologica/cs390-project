@@ -258,9 +258,9 @@ def logFitness(fitness):
   print('Average accuracy of generation: %f%%' % (np.mean(fitness) * 100))
   print('    Average accuracy of top %2d: %f%%' % (SELECTION_SIZE, averageTopFitness))
   # Save these arrays
-  with open('generationFitness.npy', 'wb') as f:
+  with open('saved-fitness/generationFitness.npy', 'wb') as f:
     np.save(f, generationFitness)
-  with open('topGenerationFitness.npy', 'wb') as f:
+  with open('saved-fitness/topGenerationFitness.npy', 'wb') as f:
     np.save(f, topGenerationFitness)
 
 
@@ -299,9 +299,9 @@ def loadSavedData(modelsPath, fitPath, topFitPath):
 
 '''
 CONTINUE_TRAINING = True
-loadSavedData(DRIVE_PREFIX + 'saved-mating-pool',
-              DRIVE_PREFIX + 'generationFitness.npy',
-              DRIVE_PREFIX + 'topGenerationFitness.npy')
+loadSavedData('saved-mating-pool',
+              'saved-fitness/generationFitness.npy',
+              'saved-fitness/topGenerationFitness.npy')
 assert len(savedMatingPool) == SELECTION_SIZE
 assert len(generationFitness) == len(topGenerationFitness)
 generationNum = len(generationFitness)
