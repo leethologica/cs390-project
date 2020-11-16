@@ -146,7 +146,6 @@ def singlePointCrossover(parentWeights, parentBiases):
 
 
 def evolve(population, fitness):
-  global savedMatingPool
   # Order the population in order of fitness
   # Note that fitness is measured by accuracy, so we sort in descending order
   sortedIndexes = sorted(range(len(fitness)), key=lambda x: -fitness[x])
@@ -155,7 +154,7 @@ def evolve(population, fitness):
   print('Selected individuals: %s' % [i + 1 for i in sortedIndexes[:SELECTION_SIZE]])
   newPopulation = crossover(sortedPopulation[:SELECTION_SIZE],
                             method='uniform')
-  savedMatingPool = sortedPopulation[:SELECTION_SIZE] # Save mating pool for future training
+  saveMatingPool(sortedPopulation[:SELECTION_SIZE]) # Save mating pool for future training
   return newPopulation
 
 
@@ -204,13 +203,14 @@ def predict(input, individual):
 
 
 def getFittestIndividual(data):
-  global currentPopulation, generationNum, savedMatingPool, CONTINUE_TRAINING
+  global currentPopulation, generationNum, CONTINUE_TRAINING
   if CONTINUE_TRAINING == False:
     for i in range(POPULATION_SIZE):
       currentPopulation.append(buildModel())
   else:
     # Produce new generation using saved mating pool from previous run
     # Fitness is just used to sort them, but these are already sorted
+    global savedMatingPool
     currentPopulation = evolve(savedMatingPool,
                                np.arange(SELECTION_SIZE + 1)[SELECTION_SIZE:0:-1])
 
@@ -229,10 +229,8 @@ def getFittestIndividual(data):
   # Order the last population in order of fitness
   sortedIndexes = sorted(range(len(fitness)), key=lambda x: -fitness[x])
   sortedPopulation = [currentPopulation[i] for i in sortedIndexes]
-  for i in range(SELECTION_SIZE):
-    savePath = 'saved-mating-pool/ann/parent%s' % i
-    currentPopulation[i].save(savePath)
-  return currentPopulation[0]
+  saveMatingPool(sortedPopulation[:SELECTION_SIZE])
+  return sortedPopulation[0]
 
 
 def evalResults(data, predictions):
@@ -247,6 +245,12 @@ def evalResults(data, predictions):
 
 
 # =========================== Logging Functions ===========================
+def saveMatingPool(matingPool):
+  for individual in matingPool:
+    savePath = 'saved-mating-pool/cnn/parent%s' % i
+    individual.save(savePath)
+
+
 def logFitness(fitness):
   global generationFitness, topGenerationFitness
   averageFitness = np.mean(fitness) * 100
