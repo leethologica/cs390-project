@@ -1,4 +1,4 @@
-import os, random, time, imageio
+import os, random, time
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -9,7 +9,6 @@ from tensorflow.keras.layers import Dropout, BatchNormalization
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.optimizers import Adam
-from PIL import Image
 import matplotlib.pyplot as plt
 
 plt.style.use('default')
@@ -21,6 +20,7 @@ tf.random.set_seed(2187)
 # Dataset details
 IH, IW, IZ = 28, 28, 1
 IMAGE_SIZE = IH * IW * IZ
+IMAGE_SHAPE = (IH, IW, IZ)
 NUM_CLASSES = 10
 
 # Hyperparameters
@@ -28,7 +28,7 @@ NUM_GENERATIONS = 200
 POPULATION_SIZE = 100
 SELECTION_SIZE = 15
 MUTATION_RATE = 0.1
-MUTATION_WEIGHT_RANGE = (-1, 1)
+MUTATION_WEIGHT_RANGE = (-0.5, 0.5)
 MUTATION_BIAS_RANGE = (-0.1, 0.1)
 
 # Toggle to continue training
@@ -85,6 +85,8 @@ def crossover(parents, method='uniform'):
     # and biases are a list of size m
     individual = buildModel()
     for j in range(len(parentA.layers)):
+      # The penultimate layer is a Flatten layer and has no weights, so skip it
+      if j == len(parentA.layers) - 2:  continue
       parentWeights = (parentA.layers[j].get_weights()[0],
                        parentB.layers[j].get_weights()[0])
       parentBiases = (parentA.layers[j].get_weights()[1],
@@ -157,7 +159,7 @@ def evolve(population, fitness):
   print('Selected individuals: %s' % [i + 1 for i in sortedIndexes[:SELECTION_SIZE]])
   newPopulation = crossover(sortedPopulation[:SELECTION_SIZE],
                             method='uniform')
-  savedMatingPool = sortedPopulation[:SELECTION_SIZE] # Save mating pool for future training
+  saveMatingPool(sortedPopulation[:SELECTION_SIZE]) # Save mating pool for future training
   return newPopulation
 
 
@@ -179,8 +181,8 @@ def getRawData():
 def preprocessData(raw):
   ((xTrain, yTrain), (xTest, yTest)) = raw
   xTrain, xTest = xTrain / 255.0, xTest / 255.0
-  xTrainP = xTrain.reshape((np.shape(xTrain)[0], -1))
-  xTestP = xTest.reshape((np.shape(xTest)[0], -1))
+  xTrainP = xTrain.reshape((np.shape(xTrain)[0], IH, IW, IZ))
+  xTestP = xTest.reshape((np.shape(xTest)[0], IH, IW, IZ))
   yTrainP = to_categorical(yTrain, NUM_CLASSES)
   yTestP = to_categorical(yTest, NUM_CLASSES)
   return ((xTrainP, yTrainP), (xTestP, yTestP))
@@ -189,9 +191,12 @@ def preprocessData(raw):
 def buildModel():
   model = Sequential()
 
-  model.add(Dense(IMAGE_SIZE, input_shape=(IMAGE_SIZE, )))
-  # model.add(Dense(64, activation='relu'))
-  model.add(Dense(32, activation='relu'))
+  model.add(Conv2D(8, (2, 2), padding='same', activation='relu', input_shape=IMAGE_SHAPE))
+  model.add(Conv2D(16, (2, 2), padding='same', activation='relu'))
+
+  #model.add(Conv2D(32, (3, 3), padding='same', activation='relu'))
+
+  model.add(Flatten())
   model.add(Dense(NUM_CLASSES, activation='softmax'))
 
   model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
@@ -206,13 +211,14 @@ def predict(input, individual):
 
 
 def getFittestIndividual(data):
-  global currentPopulation, generationNum, savedMatingPool, CONTINUE_TRAINING
+  global currentPopulation, generationNum, CONTINUE_TRAINING
   if CONTINUE_TRAINING == False:
     for i in range(POPULATION_SIZE):
       currentPopulation.append(buildModel())
   else:
     # Produce new generation using saved mating pool from previous run
     # Fitness is just used to sort them, but these are already sorted
+    global savedMatingPool
     currentPopulation = evolve(savedMatingPool,
                                np.arange(SELECTION_SIZE + 1)[SELECTION_SIZE:0:-1])
 
@@ -231,10 +237,8 @@ def getFittestIndividual(data):
   # Order the last population in order of fitness
   sortedIndexes = sorted(range(len(fitness)), key=lambda x: -fitness[x])
   sortedPopulation = [currentPopulation[i] for i in sortedIndexes]
-  for i in range(SELECTION_SIZE):
-    savePath = 'saved-mating-pool/parent%s' % i
-    currentPopulation[i].save(savePath)
-  return currentPopulation[0]
+  saveMatingPool(sortedPopulation[:SELECTION_SIZE])
+  return sortedPopulation[0]
 
 
 def evalResults(data, predictions):
@@ -249,6 +253,12 @@ def evalResults(data, predictions):
 
 
 # =========================== Logging Functions ===========================
+def saveMatingPool(matingPool):
+  for individual in matingPool:
+    savePath = 'saved-mating-pool/cnn/parent%s' % i
+    individual.save(savePath)
+
+
 def logFitness(fitness):
   global generationFitness, topGenerationFitness
   averageFitness = np.mean(fitness) * 100
@@ -258,9 +268,9 @@ def logFitness(fitness):
   print('Average accuracy of generation: %f%%' % (np.mean(fitness) * 100))
   print('    Average accuracy of top %2d: %f%%' % (SELECTION_SIZE, averageTopFitness))
   # Save these arrays
-  with open('saved-fitness/generationFitness.npy', 'wb') as f:
+  with open('saved-fitness/cnn/generationFitness.npy', 'wb') as f:
     np.save(f, generationFitness)
-  with open('saved-fitness/topGenerationFitness.npy', 'wb') as f:
+  with open('saved-fitness/cnn/topGenerationFitness.npy', 'wb') as f:
     np.save(f, topGenerationFitness)
 
 
@@ -269,7 +279,7 @@ def graphFitness():
   df = pd.DataFrame({'generation': [i + 1 for i in range(generationNum)],
                      'fitness': generationFitness,
                      'top': topGenerationFitness})
-  OUTPUT_PATH = 'logs/learning-curve.png'
+  OUTPUT_PATH = 'logs/cnn/learning-curve.png'
   plt.figure(figsize=(10, 10))
   plt.plot('generation', 'fitness', data=df, color='red',
            label='Population')

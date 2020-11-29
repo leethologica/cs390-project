@@ -49,10 +49,31 @@ Non-trainable params: 0
 _________________________________________________________________
 ```
 
-An example of the learning curve of this process:
-
-<img src="./assets/notes/learning-curve-example.png" alt="alt" style="zoom:75%;" />
+<img src="./assets/notes/ann-learning-curve.png" alt="alt" style="zoom:75%;" />
 
 This learning curve is the result of training with a population size of 100, a mating pool size of 15, uniform crossover, and random additive mutation over 200 generations. 
+
+We performed the same process with a convolutional neural network, with each individual having the following architecture:
+
+```
+Model: "sequential_2"
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #   
+=================================================================
+conv2d_2 (Conv2D)            (None, 28, 28, 8)         40        
+_________________________________________________________________
+conv2d_3 (Conv2D)            (None, 28, 28, 16)        528       
+_________________________________________________________________
+flatten_1 (Flatten)          (None, 12544)             0         
+_________________________________________________________________
+dense (Dense)                (None, 10)                125450    
+=================================================================
+Total params: 126,018
+Trainable params: 126,018
+Non-trainable params: 0
+_________________________________________________________________
+```
+
+<img src="./assets/notes/cnn-learning-curve.png" alt="alt" style="zoom:36%;" />
 
 ## Reinforcement Learning Pong Player
