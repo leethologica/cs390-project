@@ -3,6 +3,9 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
+import matplotlib.pyplot as plt
+
+plt.style.use('seaborn')
 
 NUM_GENERATIONS = 200
 POPULATION_SIZE = 100
@@ -39,12 +42,12 @@ class GA:
       raise(ValueError('Unknown crossover method %s' % crossover_type))
       return None
     self.current_population = None
+    self.builder_args = list()
 
     # Saving and logging purposes
-    self.generation_number = 0
-    self.saved_mating_pool = None
-    self.generation_fitness = None
-    self.top_generation_fitness = None
+    self.generation_number = 1
+    self.generation_fitness = list()
+    self.top_generation_fitness = list()
 
 
   '''
@@ -55,7 +58,8 @@ class GA:
   Returns: the initialized population
   '''
   def initialize_population(self, *args):
-    self.current_population = [self.model_builder(*args) for _ in range(self.population_size)]
+    self.builder_args = [*args]
+    self.current_population = [self.model_builder(*self.builder_args) for _ in range(self.population_size)]
     return self.current_population
 
 
@@ -70,16 +74,22 @@ class GA:
   def get_best_model(self, evaluator, verbose=False, **kwargs):
     self.verbose=verbose
     fitness = None
-    for generation in range(self.num_generations):
+    for generation in range(self.generation_number, self.num_generations + 1):
       fitness = list()
       if self.verbose:
         start = time.time()
-        print('----------GENERATION %s----------' % (generation + 1))
+        print('--------------------------------\n'\
+              '----------GENERATION %s----------\n'\
+              '--------------------------------\n' % generation)
 
+      i = 1
       for individual in self.current_population:
+        if self.verbose:
+          print('----------INDIVIDUAL %s----------' % i)
         fitness.append(evaluator(individual, *kwargs['params']))
+        i+=1
       self.current_population = self.__evolve(fitness)
-
+      self.generation_number += 1
       if self.verbose:
         end = time.time()
         print('Generation produced in %ds' % (end - start))
@@ -102,8 +112,6 @@ class GA:
   def __evolve(self, fitness):
     sorted_population = self.__sort_population(self.current_population, fitness)
 
-    if self.verbose:
-      print('Selected individuals: %s' % [i + 1 for i in sorted_indexes[:self.selection_size]])
     new_population = self.__crossover(sorted_population[:self.selection_size])
     self.__save_mating_pool(sorted_population[:self.selection_size])
     return new_population
@@ -128,14 +136,14 @@ class GA:
 
       # Construct new individual
       dense_layer_indexes = [x for x in range(len(parent_A)) if isinstance(parent_A[x], nn.Linear)]
-      individual = self.model_builder()
-      for j in denseLayerIndexes:
+      individual = self.model_builder(*self.builder_args)
+      for j in dense_layer_indexes:
         parent_weights = (parent_A[j].weight, parent_B[j].weight)
         parent_biases = (parent_A[j].bias, parent_B[j].bias)
         weights, biases = self.crossover_method(parent_weights, parent_biases)
 
-        individual[j].weight = weights
-        individual[j].bias = biases
+        individual.state_dict()['%s.weight' % j][:] = torch.Tensor(weights)
+        individual.state_dict()['%s.bias' % j][:] = torch.Tensor(biases)
       new_population.append(individual)
     return new_population
 
@@ -214,7 +222,9 @@ class GA:
     # Order the population in order of fitness
     r = -1 if self.descending_fitness else 1
     sorted_indexes = sorted(range(len(fitness)), key=lambda x: r * fitness[x])
-    sorted_population = [population[i] for i in sortedIndexes]
+    if self.verbose:
+      print('Selected individuals: %s' % [i + 1 for i in sorted_indexes[:self.selection_size]])
+    sorted_population = [population[i] for i in sorted_indexes]
     return sorted_population
 
 
@@ -225,11 +235,11 @@ class GA:
     mating_pool: the matining pool to be saved
   Returns: None
   '''
-  def __save_mating_pool(mating_pool):
+  def __save_mating_pool(self, mating_pool):
     i = 0
     for individual in mating_pool:
-      save_path = 'saved-pating-pool/parent%s' % i
-      individual.save(save_path)
+      save_path = 'saved-mating-pool/parent%s.pt' % i
+      torch.save(individual.state_dict(), save_path)
       i += 1
 
 
@@ -242,7 +252,7 @@ class GA:
     fitness: the fitness of each individual in the current population
   Returns: None
   '''
-  def __log_fitness(fitness):
+  def __log_fitness(self, fitness):
     average_fitness = np.mean(fitness)
     average_top_fitness = np.mean(fitness[:self.selection_size])
     self.generation_fitness.append(average_fitness)
@@ -262,8 +272,8 @@ class GA:
 
   Returns: None
   '''
-  def __graph_fitness():
-    df = pd.DataFrame({'generation': [i + 1 for i in range(self.generation_number)],
+  def __graph_fitness(self):
+    df = pd.DataFrame({'generation': [i for i in range(1, self.generation_number)],
                        'fitness': self.generation_fitness,
                        'top': self.top_generation_fitness})
     output_path = 'logs/learning-curve.png'

@@ -33,7 +33,7 @@ def explore(env, model, num_steps):
 def train_model(model, env, epochs, clip, learning_rate=0.003, gamma=0.99, mem_size=500):
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     score = []
-    for epoch in range(epochs):
+    for epoch in range(1, epochs + 1):
         transitions, rewards = explore(env, model, mem_size)
         batch_Gvals = []
         for i in range(len(transitions)):
@@ -56,7 +56,7 @@ def train_model(model, env, epochs, clip, learning_rate=0.003, gamma=0.99, mem_s
         optimizer.step()
         #score.append(run_epoch(env, model, optimizer, gamma, mem_size))
         score.append(len(transitions))
-        if epoch % 50 == 0 and epoch > 0:
+        if epoch % 100 == 0 and epoch > 0:
             print('Trajectory {}\tAverage Score: {:.2f}'.format(epoch, np.mean(score[-50:])))
     return np.mean(score[(-1 * clip):])
 
@@ -112,9 +112,12 @@ def run_pool(env, template, population):
 
 def main():
     env = gym.make('CartPole-v0')
-    ga = GA(num_generations=25,
-            population_size=20,
-            selection_size=5,
+    # For "quick" testing purposes use num_generations=2, population_size=3, selection_size=2
+    # For actual testing purposes use something a lot higher, for example:
+    # num_generations=100, population_size=200, selection_size=20
+    ga = GA(num_generations=2,
+            population_size=3,
+            selection_size=2,
             mutation_weight_range=(-0.1, 0.1),
             mutation_bias_range=(-0.1, 0.1),
             descending_fitness=True,
