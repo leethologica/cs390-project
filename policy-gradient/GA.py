@@ -24,7 +24,8 @@ class GA:
                mutation_weight_range=MUTATION_WEIGHT_RANGE,
                mutation_bias_range=MUTATION_BIAS_RANGE,
                crossover_type='uniform',
-               descending_fitness=False
+               descending_fitness=False,
+               elitism=True
               ):
     self.num_generations = num_generations
     self.population_size = population_size
@@ -34,6 +35,7 @@ class GA:
     self.mutation_bias_range = mutation_bias_range
     self.model_builder = model_builder
     self.descending_fitness = descending_fitness
+    self.elitism = elitism
     if crossover_type.lower() == 'uniform':
       self.crossover_method = self.__uniform_crossover
     elif 'single' in crossover_type.lower():
@@ -126,11 +128,13 @@ class GA:
   '''
   def __crossover(self, parents):
     new_population = list()
-
+    start = 0
     # Elitism - most fit parent is copied to next generation
-    new_population.append(parents[0])
+    if self.elitism:
+      new_population.append(parents[0])
+      start = 1
 
-    for i in range(1, self.population_size):
+    for i in range(start, self.population_size):
       # Select parents for new individual
       parent_A, parent_B = random.sample(parents, 2)
 
