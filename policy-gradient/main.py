@@ -8,6 +8,8 @@ import gym
 
 import time
 
+from GA import GA
+
 
 def explore(env, model, num_steps):
     env_state = env.reset()
@@ -28,48 +30,40 @@ def explore(env, model, num_steps):
     return transitions, reward_batch
 
 
-def train_model(env, model, epochs, learning_rate=0.003, gamma=0.99, mem_size=500):
+def train_model(model, env, epochs, clip, learning_rate=0.003, gamma=0.99, mem_size=500):
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     score = []
     for epoch in range(epochs):
-        score.append(run_epoch(env, model, optimizer, gamma, mem_size))
+        transitions, rewards = explore(env, model, mem_size)
+        batch_Gvals = []
+        for i in range(len(transitions)):
+            new_Gval = 0
+            power = 0
+            for j in range(i, len(transitions)):
+                new_Gval = new_Gval + ((gamma ** power) * rewards[j]).numpy()
+            power += 1
+            batch_Gvals.append(new_Gval)
+        expected_returns_batch = torch.FloatTensor(batch_Gvals)
+        expected_returns_batch /= expected_returns_batch.max()
+        states = torch.Tensor([s for (s, a, r) in transitions])
+        actions = torch.Tensor([a for (s, a, r) in transitions])
+        preds = model(states)
+        probabilities = preds.gather(dim=1, index=actions.long().view(-1, 1)).squeeze()
+        loss = -torch.sum(torch.log(probabilities) * expected_returns_batch)
 
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        #score.append(run_epoch(env, model, optimizer, gamma, mem_size))
+        score.append(len(transitions))
         if epoch % 50 == 0 and epoch > 0:
-            print('Trajectory {}\tAverage Score: {:.2f}'.format(epoch, np.mean(score[-50:-1])))
-    return score
-
-
-def run_epoch(env, model, optimizer, gamma, mem_size=500):
-    transitions, rewards = explore(env, model, mem_size)
-    batch_Gvals = []
-    for i in range(len(transitions)):
-        new_Gval = 0
-        power = 0
-        for j in range(i, len(transitions)):
-            new_Gval = new_Gval + ((gamma ** power) * rewards[j]).numpy()
-        power += 1
-        batch_Gvals.append(new_Gval)
-    expected_returns_batch = torch.FloatTensor(batch_Gvals)
-    expected_returns_batch /= expected_returns_batch.max()
-    states = torch.Tensor([s for (s, a, r) in transitions])
-    actions = torch.Tensor([a for (s, a, r) in transitions])
-    preds = model(states)
-    probabilities = preds.gather(dim=1, index=actions.long().view(-1, 1)).squeeze()
-    loss = -torch.sum(torch.log(probabilities) * expected_returns_batch)
-
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
-
-    return len(transitions)
+            print('Trajectory {}\tAverage Score: {:.2f}'.format(epoch, np.mean(score[-50:])))
+    return np.mean(score[(-1 * clip):])
 
 
 def build_model(env):
-    in_dim = 1
-    for i in env.observation_space.shape:
-        in_dim *= i
     return nn.Sequential(
-        nn.Linear(in_dim, 24),
+        nn.Linear(np.prod(env.observation_space.shape), 24),
         nn.ReLU(),
         nn.Linear(24, 24),
         nn.ReLU(),
@@ -97,17 +91,19 @@ def test_model(env, model, steps=100, delay=0.):
 
 def run_training_batch(template, env, epochs=500, clip=50):
     model = template(env)
-    scores = train_model(env, model, epochs)
-    return model, np.mean(scores[(-1 * clip):])
+    scores = train_model(env, model, epochs, clip)
+    #return model, np.mean(scores[(-1 * clip):])
+    return model, scores
 
 
 '''
     creates a pool of agents and returns the best model found
 '''
-def run_pool(env, template, pool_size=25):
+def run_pool(env, template, population):
     best_model = None
     best_score = 0
-    for _ in range(pool_size):
+    for i in range(pool_size):
+        print('Batch %s' % (i + 1))
         model, score = run_training_batch(template, env)
         if score > best_score:
             best_model = model
@@ -116,19 +112,18 @@ def run_pool(env, template, pool_size=25):
 
 def main():
     env = gym.make('CartPole-v0')
-    model = run_pool(env, build_model)
+    ga = GA(num_generations=25,
+            population_size=20,
+            selection_size=5,
+            mutation_weight_range=(-0.1, 0.1),
+            mutation_bias_range=(-0.1, 0.1),
+            descending_fitness=True,
+            model_builder=build_model)
+    ga.initialize_population(env)
+    model = ga.get_best_model(train_model, verbose=True, params=[env, 500, 50])
+    #model = run_pool(env, build_model)
     input("training done")
     test_model(env, model, delay=0.05)
-
-
-def oldmain():
-    env = gym.make('CartPole-v0')
-    # best_model = None
-    model = build_model(env)
-    train_model(env, model, 500)
-    input("training done")
-    test_model(env, model, delay=0.01)
-    env.close()
 
 
 if __name__ == '__main__':
