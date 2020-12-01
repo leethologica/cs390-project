@@ -1,8 +1,6 @@
-
 import gym
 import numpy as np
 import random
-import tensorflow.keras as k
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.optimizers import Adam
@@ -84,41 +82,54 @@ class DQN:
     def save_model(self, fn):
         self.model.save(fn)
 
+
 def main():
     env     = gym.make("CartPole-v0")
+    env._max_episode_steps = 500
     #gamma   = 0.9
     #epsilon = .95
 
     #print(f"Shape of environment is {str(env.observation_space.shape[0])}")
     #exit()
 
-    trials  = 2
-    trial_len = 20
+    trials  = 500
+    trial_len = 250
 
     # updateTargetNetwork = 1000
     dqn_agent = DQN(env=env)
-    steps = []
+    scores_arr = []
     for trial in range(trials):
         print(f"Performing trial {trial}")
+	    #print("Yikes!")
         cur_state = env.reset()
-        for step in range(trial_len):
-            print(f"On step {step}")
-            env.render()
+        done = False
+        score = 0
+        #for step in range(trial_len):
+        while not done:
+            #print(f"On step {trial}")
+            #env.render()
             action = dqn_agent.act(cur_state.reshape((1, 4)))
-            new_state, reward, done, info = env.step(action)
+            new_state, reward, done, _ = env.step(action)
 
             reward = reward if not done else -20
             dqn_agent.remember(cur_state, action, reward, new_state, done)
 
-            dqn_agent.replay()       # internally iterates default (prediction) model
+            #dqn_agent.replay()       # internally iterates default (prediction) model
             #dqn_agent.target_train() # iterates target model
 
             cur_state = new_state
-            if done:
-                break
-        
-    
-
+            score += 1
+        print(f"Trial {trial} has score {score}")
+        scores_arr.append(score)
+        avg_100 = 0
+        if trial >= 101:
+            list_100 = scores_arr[-100:]
+            avg_100 = sum(list_100) / 100
+            print(f"\tAverage over last 100 runs: {avg_100}")
+        dqn_agent.replay()
+    print("Saving high score")
+    dqn_agent.save_model("highscore_model")
+    print(scores_arr)
 
 if __name__ == "__main__":
     main()
