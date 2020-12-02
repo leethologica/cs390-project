@@ -29,6 +29,8 @@ class Agent():
         model.add(Dense(self.action_size, activation='linear'))
         model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))
 
+        model.summary()
+
         if os.path.isfile(self.weight_backup):
             model.load_weights(self.weight_backup)
             self.exploration_rate = self.exploration_min
@@ -63,7 +65,7 @@ class Agent():
 class CartPole:
     def __init__(self):
         self.sample_batch_size = 32
-        self.episodes          = 1
+        self.episodes          = 5000
         self.env               = gym.make('CartPole-v1')
 
         self.state_size        = self.env.observation_space.shape[0]
@@ -74,28 +76,32 @@ class CartPole:
     def run(self):
         try:
             #self.env = gym.wrappers.Monitor(self.env, "examplerun", video_callable=lambda episode_id: True,force=True)
+            #self.env._max_episode_steps = 4000
             scores_list = []
             for index_episode in range(self.episodes):
                 state = self.env.reset()
                 state = np.reshape(state, [1, self.state_size])
 
                 done = False
-                index = 0
+                score = 0
                 while not done:
                     self.env.render() #uncomment for play
 
                     action = self.agent.act(state)
 
                     next_state, reward, done, _ = self.env.step(action)
+
+                    score += reward
+
                     next_state = np.reshape(next_state, [1, self.state_size])
                     #self.agent.remember(state, action, reward, next_state, done) #comment for play
                     state = next_state
-                    index += 1
-                print("Episode {}# Score: {}".format(index_episode, index + 1))
-                scores_list.append(index + 1)
+                    
+                print("Episode {}# Score: {}".format(index_episode, score))
+                scores_list.append(score)
                 #self.agent.replay(self.sample_batch_size) #comment for play
         finally:
-            #self.agent.save_model("rl-temp-f3.h5")
+            #self.agent.save_model("cartpole_newrun.h5")
             print(scores_list)
             self.env.close()
 

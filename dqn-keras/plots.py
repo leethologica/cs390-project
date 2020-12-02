@@ -41,6 +41,14 @@ avg_scores = sum(scores)/100
 avg_thresh = [195]*100
 avg_actual = [avg_scores]*100
 
+avg_100 = [0] * 100
+
+for i in range(0, len(scores) - 100):
+    avg_100_val = sum(scores[i:i+100])/100
+    avg_100.append(avg_100_val)
+
+print(len(avg_100))
+
 max_score = max(scores)
 max_index = scores.index(max_score)
 
@@ -49,17 +57,19 @@ min_index = scores.index(min_score)
 
 #plt.ion()
 fig, ax = plt.subplots()
-Ln, = ax.plot(steps, scores)
-ax.annotate(str(max_score), xy = (max_index, max_score))
+Ln, = ax.plot(steps, scores, label="Score per game")
+#ax.annotate(str(max_score), xy = (max_index, max_score))
 #ax.annotate(str(min_score), xy = (min_index, min_score))
 
-Ln2, = ax.plot(steps, avg_thresh)
+Ln2, = ax.plot(steps, avg_thresh, '--r', label="Average threshold")
 ax.annotate("195", xy=(95, 197))
 
-Ln3, = ax.plot(steps, avg_actual)
+#Ln3, = ax.plot(steps, avg_100, '-g', label="Average over last 100 runs")
+Ln3, = ax.plot(steps, avg_actual, '-g', label="Average score")
 ax.annotate(str(avg_scores), xy=(95, avg_scores + 2))
 
-plt.title("Scores over games played - 24-24 trained NN")
+plt.legend()
+plt.title("Scores over games played after training - 24-24 NN")
 plt.ylabel("Score")
 plt.xlabel("Games played")
 
